@@ -1,0 +1,625 @@
+/* =========================================================
+   Moonstone — folha de estilo
+   Tudo é local: nenhuma fonte, textura ou script externo,
+   então o projeto funciona offline e aberto direto do disco.
+   ========================================================= */
+
+:root {
+  /* paleta */
+  --ink:        #05060f;
+  --ink-2:      #0b0e21;
+  --violet:     #1b1740;
+  --moon:       #eef3ff;
+  --moon-dim:   #b9c4e6;
+  --gold:       #f4d58d;
+  --gold-soft:  rgba(244, 213, 141, .45);
+
+  /* tipografia */
+  --font-display: 'Georgia', 'Times New Roman', serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* ritmo */
+  --ease: cubic-bezier(.22, .61, .36, 1);
+  --fade: 900ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--moon);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+body {
+  /* gradiente de céu por trás do canvas de estrelas */
+  background:
+    radial-gradient(120% 80% at 50% 110%, var(--violet) 0%, transparent 60%),
+    radial-gradient(90% 60% at 50% -10%, #10142e 0%, transparent 55%),
+    var(--ink);
+}
+
+img { max-width: 100%; }
+
+/* ---------- Céu ---------- */
+#sky {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.moon {
+  position: fixed;
+  top: 14vh;
+  left: 50%;
+  width: clamp(110px, 14vw, 190px);
+  aspect-ratio: 1;
+  margin-left: calc(clamp(110px, 14vw, 190px) / -2);
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #fff 0%, #e6ebf7 38%, #aab2cc 72%, #7d859e 100%);
+  box-shadow: 0 0 70px 24px rgba(220, 232, 255, .16), inset -8px -10px 24px rgba(0, 0, 0, .35);
+  z-index: 0;
+  pointer-events: none;
+  animation: moonGlow 7s var(--ease) infinite alternate, moonFloat 12s ease-in-out infinite alternate;
+  transition: transform var(--fade) var(--ease), top var(--fade) var(--ease), opacity var(--fade) var(--ease);
+}
+/* pequenas crateras, sem imagem extra */
+.moon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 62% 30%, rgba(0,0,0,.10) 0 6%, transparent 7%),
+    radial-gradient(circle at 40% 62%, rgba(0,0,0,.09) 0 9%, transparent 10%),
+    radial-gradient(circle at 72% 66%, rgba(0,0,0,.07) 0 5%, transparent 6%);
+}
+/* sombra que transforma a lua em crescente na tela do mapa */
+.moon__shade {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translateX(-40%) scale(.98);
+  opacity: 0;
+  transition: opacity var(--fade) var(--ease), transform var(--fade) var(--ease);
+}
+body[data-screen="map"] .moon { top: 12vh; left: 82%; transform: scale(.62); }
+body[data-screen="map"] .moon__shade { opacity: 1; transform: translateX(34%) scale(.98); }
+
+@keyframes moonGlow {
+  from { box-shadow: 0 0 50px 16px rgba(220, 232, 255, .12), inset -8px -10px 24px rgba(0,0,0,.35); }
+  to   { box-shadow: 0 0 96px 34px rgba(220, 232, 255, .28), inset -8px -10px 24px rgba(0,0,0,.35); }
+}
+@keyframes moonFloat { from { translate: 0 -6px; } to { translate: 0 10px; } }
+
+/* ---------- Telas ---------- */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity var(--fade) var(--ease);
+}
+.screen[hidden] { display: none; }
+.screen--active { opacity: 1; }
+
+/* ---------- Botões ---------- */
+.btn {
+  font: inherit;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform .25s var(--ease), background-color .25s, border-color .25s, opacity .25s, box-shadow .25s;
+}
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn:not(:disabled):hover { transform: translateY(-2px); }
+.btn:not(:disabled):active { transform: translateY(0) scale(.98); }
+
+.btn--primary {
+  padding: .85rem 3rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  font-size: .8rem;
+  color: var(--ink);
+  background: linear-gradient(180deg, #fff 0%, var(--gold) 100%);
+  border: 0;
+  box-shadow: 0 0 0 0 var(--gold-soft);
+}
+.btn--primary:not(:disabled) { animation: pulseGlow 2.6s ease-in-out infinite; }
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--gold-soft); }
+  50%      { box-shadow: 0 0 34px 6px var(--gold-soft); }
+}
+
+.btn--ghost {
+  padding: .55rem 1.3rem;
+  font-size: .78rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--moon-dim);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .18);
+  backdrop-filter: blur(6px);
+}
+.btn--ghost:hover { color: var(--moon); border-color: rgba(255, 255, 255, .45); }
+
+:where(button, [tabindex]):focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+/* ---------- Tela de carregamento ---------- */
+.loader__inner { text-align: center; padding: 2rem; }
+
+.brand {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 9vw, 5.5rem);
+  font-weight: 400;
+  letter-spacing: .18em;
+  margin: 0;
+  background: linear-gradient(180deg, #fff 0%, var(--moon-dim) 70%, #6f7ba3 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 60px rgba(200, 220, 255, .25);
+  animation: rise 1.4s var(--ease) both;
+}
+.brand__sub {
+  margin: .35rem 0 2.6rem;
+  font-size: clamp(.72rem, 2.6vw, .9rem);
+  letter-spacing: .38em;
+  text-transform: uppercase;
+  color: var(--moon-dim);
+  opacity: .75;
+  animation: rise 1.4s var(--ease) .18s both;
+}
+@keyframes rise { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+
+.progress {
+  width: min(320px, 70vw);
+  height: 2px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, .12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress__bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--moon-dim), #fff, var(--gold));
+  box-shadow: 0 0 12px rgba(244, 213, 141, .8);
+  transition: width .4s var(--ease);
+}
+.progress__label {
+  margin: .8rem 0 2rem;
+  font-size: .7rem;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--moon-dim);
+  opacity: .6;
+}
+.loader--ready .progress, .loader--ready .progress__label { opacity: 0; transition: opacity .5s; }
+
+.hint { font-size: .72rem; letter-spacing: .12em; color: var(--moon-dim); }
+.hint--muted { margin-top: 1.6rem; opacity: .45; }
+
+/* ---------- Créditos ---------- */
+#credits { align-content: center; }
+
+.credits__scroll {
+  text-align: center;
+  translate: 0 100vh;
+  will-change: transform;
+}
+.credits--rolling .credits__scroll { animation: scrollCredits 22s linear forwards; }
+
+.credits__role {
+  margin: 2.4rem 0 .3rem;
+  font-size: .68rem;
+  letter-spacing: .42em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: .8;
+}
+.credits__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 4.4vw, 1.7rem);
+  letter-spacing: .06em;
+  color: var(--moon);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .8);
+}
+.credits__logo {
+  display: block;
+  width: min(420px, 76vw);
+  margin: 4rem auto 6rem;
+  opacity: 0;
+  filter: drop-shadow(0 0 30px rgba(190, 210, 255, .35));
+}
+.credits--rolling .credits__logo { animation: logoIn 2s var(--ease) 15.5s forwards; }
+
+@keyframes scrollCredits { from { translate: 0 100vh; } to { translate: 0 -105%; } }
+@keyframes logoIn {
+  0%   { opacity: 0; scale: .86; }
+  60%  { opacity: 1; scale: 1.04; }
+  100% { opacity: 1; scale: 1; }
+}
+
+.skip {
+  position: absolute;
+  right: max(1.5rem, env(safe-area-inset-right));
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+}
+.skip__ring {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold-soft);
+  animation: blink 1.8s ease-in-out infinite;
+}
+@keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+/* ---------- Mapa ---------- */
+#map-screen {
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  padding: clamp(1rem, 3vh, 2.2rem) 1rem calc(1rem + env(safe-area-inset-bottom));
+  gap: clamp(.6rem, 2vh, 1.4rem);
+}
+
+.map__header { text-align: center; z-index: 1; }
+.map__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.4rem, 4.6vw, 2.3rem);
+  letter-spacing: .36em;
+  text-indent: .36em;
+  color: var(--moon);
+  text-shadow: 0 0 40px rgba(180, 200, 255, .35);
+}
+.map__hint {
+  margin: .4rem 0 0;
+  font-size: clamp(.62rem, 2.4vw, .74rem);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--moon-dim);
+  opacity: .6;
+  transition: opacity .6s;
+}
+.map__hint--gone { opacity: 0; }
+
+/* O arquivo mapa_moonstone.jpg tem 1200×1600, mas o pergaminho ocupa só
+   x 19→1154 e y 317→1129 (o resto é preto). O quadro abaixo recorta exatamente
+   essa área, então o mapa preenche a tela em vez de ficar minúsculo no meio.
+   As coordenadas dos pontos em REGIONS são relativas a este recorte. */
+.map-frame {
+  position: relative;
+  aspect-ratio: 1136 / 813;
+  width: min(100%, calc((100dvh - 12rem) * 1136 / 813));
+  max-width: min(1150px, 96vw);
+  margin-inline: auto;
+  align-self: center;
+  overflow: hidden;
+  /* as bordas pretas do JPG somem esmaecendo no céu, em vez de virar
+     um retângulo opaco por cima das estrelas */
+  -webkit-mask-image: radial-gradient(125% 118% at 50% 50%, #000 60%, rgba(0, 0, 0, .45) 86%, transparent 100%);
+  mask-image: radial-gradient(125% 118% at 50% 50%, #000 60%, rgba(0, 0, 0, .45) 86%, transparent 100%);
+  transition: transform .4s var(--ease);
+  animation: mapIn 1.6s var(--ease) both;
+  will-change: transform;
+}
+@keyframes mapIn { from { opacity: 0; scale: .94; } to { opacity: 1; scale: 1; } }
+
+.map-frame__img {
+  position: absolute;
+  /* 1200/1136 e 1600/813, deslocado para alinhar o recorte */
+  width: 105.634%;
+  height: 196.802%;
+  max-width: none;
+  left: -1.673%;
+  top: -38.991%;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* ---------- Pontos clicáveis ---------- */
+.hotspot {
+  position: absolute;
+  translate: -50% -50%;
+  width: clamp(44px, 5.2vw, 64px);
+  height: clamp(44px, 5.2vw, 64px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  z-index: 3;
+  -webkit-tap-highlight-color: transparent;
+}
+/* núcleo luminoso */
+.hotspot__core {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, var(--gold) 55%, rgba(244, 213, 141, 0) 72%);
+  box-shadow: 0 0 16px 4px var(--gold-soft);
+  transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+}
+/* ondas concêntricas */
+.hotspot__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--gold-soft);
+  opacity: 0;
+  animation: ripple 3s var(--ease) infinite;
+}
+.hotspot__pulse:nth-of-type(2) { animation-delay: 1.5s; }
+@keyframes ripple {
+  0%   { opacity: .7; scale: .35; }
+  70%  { opacity: .12; scale: 1.1; }
+  100% { opacity: 0; scale: 1.35; }
+}
+
+.hotspot:hover .hotspot__core,
+.hotspot:focus-visible .hotspot__core { transform: scale(1.7); box-shadow: 0 0 30px 10px var(--gold-soft); }
+
+/* etiqueta fixa (usada em telas de toque) */
+.hotspot__label {
+  position: absolute;
+  top: calc(100% - 6px);
+  left: 50%;
+  translate: -50% 0;
+  padding: .2rem .6rem;
+  font-size: .62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--moon);
+  background: rgba(6, 8, 20, .75);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+body.is-touch .hotspot__label { opacity: .9; }
+
+/* ---------- Tooltip (ponteiro) ---------- */
+.tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: .38rem .8rem;
+  font-size: .72rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--moon);
+  background: rgba(6, 8, 20, .82);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  opacity: 0;
+  translate: -50% -140%;
+  transition: opacity .22s, scale .22s;
+  scale: .92;
+  z-index: 60;
+  white-space: nowrap;
+}
+.tooltip--on { opacity: 1; scale: 1; }
+
+/* ---------- HUD ---------- */
+.hud {
+  position: fixed;
+  right: max(1.1rem, env(safe-area-inset-right));
+  top: max(1.1rem, env(safe-area-inset-top));
+  display: flex;
+  gap: .5rem;
+  z-index: 70;
+}
+.hud[hidden] { display: none; }
+.hud__btn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--moon-dim);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 50%;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color .25s, background-color .25s, transform .25s var(--ease);
+}
+.hud__btn:hover { color: var(--moon); background: rgba(255, 255, 255, .14); transform: translateY(-2px); }
+.icon { width: 20px; height: 20px; fill: currentColor; }
+.icon--off { display: none; }
+.hud__btn[aria-pressed="true"] .icon--on { display: none; }
+.hud__btn[aria-pressed="true"] .icon--off { display: block; }
+
+/* ---------- Modal ---------- */
+.popup {
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+.popup::backdrop { background: rgba(2, 3, 10, .82); backdrop-filter: blur(10px); }
+.popup[open] { display: grid; place-items: center; }
+
+.popup__card {
+  position: relative;
+  margin: 0;
+  width: min(880px, 92vw);
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(.8rem, 2vw, 1.1rem);
+  background: linear-gradient(165deg, rgba(24, 27, 54, .92), rgba(8, 10, 24, .96));
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 18px;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, .8);
+  animation: cardIn .45s var(--ease) both;
+}
+@keyframes cardIn { from { opacity: 0; scale: .93; translate: 0 14px; } to { opacity: 1; scale: 1; translate: 0 0; } }
+.popup--closing .popup__card { animation: cardOut .25s var(--ease) both; }
+@keyframes cardOut { to { opacity: 0; scale: .96; } }
+
+.popup__media {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .45);
+}
+.popup__media img {
+  width: 100%;
+  height: 100%;
+  max-height: 58dvh;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity .35s;
+}
+.popup__media img.is-loaded { opacity: 1; }
+.popup__spinner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, .18);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  opacity: 1;
+  transition: opacity .3s;
+}
+.popup__media:has(img.is-loaded) .popup__spinner { opacity: 0; }
+@keyframes spin { to { rotate: 360deg; } }
+
+.popup__body { padding: 1rem .4rem .2rem; text-align: center; }
+.popup__title {
+  margin: 0 0 .5rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.15rem, 4vw, 1.6rem);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.popup__desc {
+  margin: 0 auto;
+  max-width: 58ch;
+  font-size: clamp(.82rem, 2.6vw, .93rem);
+  line-height: 1.65;
+  color: var(--moon-dim);
+}
+
+.popup__close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 40px;
+  height: 40px;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--moon);
+  background: rgba(12, 14, 32, .95);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform .25s var(--ease), background-color .25s;
+}
+.popup__close:hover { background: rgba(60, 30, 30, .95); transform: rotate(90deg); }
+
+.popup__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding-top: .6rem;
+}
+.popup__arrow {
+  width: 34px;
+  height: 34px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--moon-dim);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color .25s, border-color .25s, transform .25s var(--ease);
+}
+.popup__arrow:hover { color: var(--moon); border-color: var(--gold); transform: scale(1.08); }
+.popup__dots { display: flex; gap: .45rem; }
+.popup__dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .22);
+  cursor: pointer;
+  transition: background-color .25s, scale .25s;
+}
+.popup__dot[aria-current="true"] { background: var(--gold); scale: 1.35; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 700px) {
+  .moon { top: 9vh; }
+  body[data-screen="map"] .moon { top: 7vh; left: 86%; transform: scale(.5); }
+  .map__title { letter-spacing: .24em; text-indent: .24em; }
+  .popup__card { width: 94vw; border-radius: 14px; }
+  .popup__close { top: -10px; right: -10px; width: 36px; height: 36px; font-size: 22px; }
+  .popup__media img { max-height: 44dvh; }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .map__header { display: none; }
+  #map-screen { padding-top: .5rem; }
+}
+
+/* ---------- Acessibilidade: movimento reduzido ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  /* sem rolagem animada: os créditos ficam parados e legíveis */
+  .credits__scroll { translate: 0 0; max-height: 100dvh; overflow-y: auto; padding: 2rem 1rem; }
+  .credits__role { margin-top: 1.2rem; }
+  .credits__logo { opacity: 1; margin: 2rem auto; width: min(260px, 60vw); }
+  .hotspot__pulse { display: none; }
+  .hotspot__label { opacity: .9; }
+}

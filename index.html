@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#05060f">
+  <meta name="description" content="Moonstone — experiência interativa: créditos animados, trilha sonora e um mapa ilustrado com regiões exploráveis.">
+  <meta property="og:title" content="Moonstone">
+  <meta property="og:description" content="Explore o mapa de Moonstone: três regiões, trilha sonora e um céu vivo.">
+  <meta property="og:image" content="moonstone_logo.png">
+  <meta property="og:type" content="website">
+  <title>Moonstone</title>
+  <link rel="icon" href="moonstone_logo.png">
+  <link rel="preload" as="image" href="mapa_moonstone.jpg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Céu procedural (estrelas, parallax, estrelas cadentes) -->
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="moon" id="moon" aria-hidden="true"><span class="moon__shade"></span></div>
+
+  <!-- ─────────── Tela 1: carregamento ─────────── -->
+  <section id="loader" class="screen screen--active" aria-label="Carregando">
+    <div class="loader__inner">
+      <h1 class="brand">Moonstone</h1>
+      <p class="brand__sub">uma jornada sob a luz da lua</p>
+
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progresso do carregamento">
+        <div class="progress__bar" id="progress-bar"></div>
+      </div>
+      <p class="progress__label" id="progress-label">carregando… 0%</p>
+
+      <button type="button" id="enter-btn" class="btn btn--primary" disabled>
+        <span>Entrar</span>
+      </button>
+      <p class="hint hint--muted">o som faz parte da experiência 🎧</p>
+    </div>
+  </section>
+
+  <!-- ─────────── Tela 2: créditos ─────────── -->
+  <section id="credits" class="screen" aria-label="Créditos" hidden>
+    <div class="credits__scroll" id="credits-scroll">
+      <p class="credits__role">Desenvolvimento</p>
+      <p class="credits__name">Ryan · Wesley</p>
+
+      <p class="credits__role">Design</p>
+      <p class="credits__name">Emilly · Allana</p>
+
+      <p class="credits__role">Trilha sonora</p>
+      <p class="credits__name">Ryan</p>
+
+      <p class="credits__role">Produção</p>
+      <p class="credits__name">Ryan · Allana · Wesley · Emilly</p>
+
+      <img src="moonstone_logo.png" alt="Logotipo de Moonstone" class="credits__logo" id="credits-logo" decoding="async">
+    </div>
+
+    <button type="button" id="skip-btn" class="btn btn--ghost skip">
+      Pular créditos
+      <span class="skip__ring" aria-hidden="true"></span>
+    </button>
+  </section>
+
+  <!-- ─────────── Tela 3: mapa ─────────── -->
+  <main id="map-screen" class="screen" aria-label="Mapa de Moonstone" hidden>
+    <header class="map__header">
+      <h2 class="map__title">Moonstone</h2>
+      <p class="map__hint" id="map-hint">Toque nos pontos luminosos para explorar</p>
+    </header>
+
+    <div class="map-frame" id="map-frame">
+      <img src="mapa_moonstone.jpg" alt="Mapa ilustrado do reino de Moonstone" class="map-frame__img" id="map-img" decoding="async">
+      <!-- os pontos são gerados por script.js a partir de REGIONS -->
+    </div>
+  </main>
+
+  <!-- ─────────── HUD ─────────── -->
+  <div class="hud" id="hud" hidden>
+    <button type="button" class="hud__btn" id="mute-btn" aria-pressed="false" title="Silenciar (M)" aria-label="Silenciar som">
+      <svg class="icon icon--on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <svg class="icon icon--off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <button type="button" class="hud__btn" id="fs-btn" title="Tela cheia (F)" aria-label="Alternar tela cheia">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <!-- Tooltip do mapa -->
+  <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <!-- ─────────── Modal de região ─────────── -->
+  <dialog id="popup" class="popup" aria-labelledby="popup-title">
+    <figure class="popup__card">
+      <button type="button" class="popup__close" id="popup-close" aria-label="Fechar (Esc)">&times;</button>
+
+      <div class="popup__media">
+        <img id="popup-img" src="" alt="">
+        <div class="popup__spinner" aria-hidden="true"></div>
+      </div>
+
+      <figcaption class="popup__body">
+        <h3 id="popup-title" class="popup__title"></h3>
+        <p id="popup-desc" class="popup__desc"></p>
+      </figcaption>
+
+      <nav class="popup__nav" aria-label="Navegar entre regiões">
+        <button type="button" class="popup__arrow" id="popup-prev" aria-label="Região anterior">&#8249;</button>
+        <span class="popup__dots" id="popup-dots"></span>
+        <button type="button" class="popup__arrow" id="popup-next" aria-label="Próxima região">&#8250;</button>
+      </nav>
+    </figure>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>
